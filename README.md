@@ -11,7 +11,7 @@ A Notion-inspired workspace app for notes, connected pages, and project database
 - Recoverable page trash, duplicate/move workflows, Markdown export, and JSON backup.
 - Responsive layout, light/dark appearance, and accessible dialogs.
 
-Rich text, custom database properties, attachments, comments, shared workspaces, and real-time collaboration are follow-up work. See ROADMAP.md and DEVELOPMENT.md for the actual status.
+Rich text, custom database properties, attachments, comments, shared workspaces, and real-time collaboration are follow-up work.
 
 ## Run locally
 
@@ -58,6 +58,6 @@ Never expose a standalone Worker that trusts forwarded identity headers directly
 
 ## Development
 
-Feature branches and reviewable PRs are the delivery units. ROADMAP.md records the seven-day target; DEVELOPMENT.md records observed results and limitations. No credentials, local databases, or user content belong in Git.
+Run the checks above before opening a pull request. Include the behavior changed and the checks run. Keep credentials, local databases, and user content out of Git.
 
 Interaction references: [Notion writing and editing](https://www.notion.com/help/writing-and-editing-basics) and [database basics](https://www.notion.com/help/intro-to-databases).
