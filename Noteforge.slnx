@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/server/">
+    <Project Path="server/Noteforge.Web/Noteforge.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Noteforge.Tests/Noteforge.Tests.csproj" />
+  </Folder>
+</Solution>

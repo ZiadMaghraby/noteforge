@@ -1,0 +1,86 @@
+<section class="database" aria-label="Database">
+    <div class="database-toolbar">
+        <div class="view-tabs" role="tablist" aria-label="Database views">
+            @foreach (var view in new[] { "Table", "Board", "List" })
+            {
+                <button role="tab" aria-selected="@(_view == view)" class="@(_view == view ? "active" : "")" @onclick="() => _view = view">@view</button>
+            }
+        </div>
+        <div class="database-actions">
+            <input class="search-input database-search" aria-label="Search database" placeholder="Search tasks…" @bind="_query" @bind:event="oninput" />
+            <select aria-label="Filter by status" @bind="_status"><option value="">All statuses</option>@foreach (var status in PageValidation.Statuses) { <option>@status</option> }</select>
+            <label class="sort-label"><input type="checkbox" @bind="_sort" /> A–Z</label>
+            <button class="primary-button" @onclick="() => Add()">+ New</button>
+        </div>
+    </div>
+    @if (_view == "Table")
+    {
+        <div class="database-table-wrap"><table class="database-table"><thead><tr><th>Name</th><th>Status</th><th>Priority</th><th>Assignee</th><th>Due date</th></tr></thead><tbody>
+        @foreach (var row in Filtered)
+        {
+            <tr @key="row.Id"><td><button aria-label="@($"Open {row.Title}")" @onclick="() => _selected = row">↗</button><input aria-label="@($"Name of {row.Title}")" @bind="row.Title" @bind:event="oninput" @bind:after="OnChange" /></td>
+                <td>@StatusControl(row)</td>
+                <td><select aria-label="@($"Priority of {row.Title}")" @bind="row.Priority" @bind:after="OnChange">@foreach (var priority in PageValidation.Priorities) { <option>@priority</option> }</select></td>
+                <td><input aria-label="@($"Assignee of {row.Title}")" @bind="row.Assignee" @bind:after="OnChange" /></td>
+                <td><input type="date" aria-label="@($"Due date of {row.Title}")" value="@row.Due" @onchange="async e => { row.Due = e.Value?.ToString() ?? string.Empty; await OnChange(); }" /></td>
+            </tr>
+        }
+        </tbody></table></div>
+    }
+    else if (_view == "Board")
+    {
+        <div class="kanban">
+        @foreach (var status in PageValidation.Statuses)
+        {
+            <section class="kanban-column" aria-label="@status" @ondragover:preventDefault @ondrop="() => Drop(status)">
+                <div class="kanban-heading"><strong>@status</strong><span>@Filtered.Count(r => r.Status == status)</span><button aria-label="@($"Add task to {status}")" @onclick="() => Add(status)">+</button></div>
+                @foreach (var row in Filtered.Where(r => r.Status == status))
+                {
+                    <article class="kanban-card" draggable="true" @ondragstart="() => _dragged = row.Id" @key="row.Id">
+                        <button class="card-title" @onclick="() => _selected = row">@row.Title</button>
+                        <div class="card-meta"><span>@row.Priority</span><span>@row.Assignee</span></div>
+                        @StatusControl(row)
+                    </article>
+                }
+                <button class="add-row" @onclick="() => Add(status)">+ New item</button>
+            </section>
+        }
+        </div>
+    }
+    else
+    {
+        <div class="database-list">@foreach (var row in Filtered) { <div @key="row.Id"><button class="list-title" @onclick="() => _selected = row">@row.Title</button>@StatusControl(row)<span>@row.Priority</span></div> }</div>
+    }
+    @if (!Filtered.Any()) { <p class="dialog-empty">No tasks match this view.</p> }
+    <button class="add-row" @onclick="() => Add()">+ New item</button>
+    <p class="database-count">@Filtered.Count() of @Rows.Count items · @Rows.Count(r => r.Status == "Done") completed</p>
+</section>
+@if (_selected is { } selected)
+{
+    <div class="modal-backdrop"><section class="nf-dialog" role="dialog" aria-modal="true" aria-label="Task details" @onkeydown='e => { if (e.Key == "Escape") _selected = null; }'>
+        <button class="dialog-close" aria-label="Close task details" @onclick="() => _selected = null">×</button>
+        <input class="task-title" aria-label="Task title" @bind="selected.Title" @bind:event="oninput" @bind:after="OnChange" />
+        <div class="task-properties">
+            <label>Status @StatusControl(selected)</label>
+            <label>Priority<select @bind="selected.Priority" @bind:after="OnChange">@foreach (var priority in PageValidation.Priorities) { <option>@priority</option> }</select></label>
+            <label>Assignee<input @bind="selected.Assignee" @bind:after="OnChange" /></label>
+            <label>Due date<input type="date" value="@selected.Due" @onchange="async e => { selected.Due = e.Value?.ToString() ?? string.Empty; await OnChange(); }" /></label>
+        </div>
+        <label class="notes-label">Notes<textarea @bind="selected.Notes" @bind:event="oninput" @bind:after="OnChange"></textarea></label>
+        <button class="delete-task" @onclick="() => Delete(selected)">Delete task</button>
+    </section></div>
+}
+@code {
+    [Parameter] public List<TaskRow> Rows { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+    private string _view = "Table", _query = "", _status = "";
+    private bool _sort;
+    private string? _dragged;
+    private TaskRow? _selected;
+    private IEnumerable<TaskRow> Filtered { get { var rows = Rows.Where(r => r.Title.Contains(_query, StringComparison.OrdinalIgnoreCase) && (_status == "" || r.Status == _status)); return _sort ? rows.OrderBy(r => r.Title) : rows; } }
+    private Task OnChange() => Changed.InvokeAsync();
+    private async Task Add(string status = "Not started") { var row = new TaskRow { Status = status }; Rows.Add(row); _selected = row; await OnChange(); }
+    private async Task Delete(TaskRow row) { Rows.Remove(row); _selected = null; await OnChange(); }
+    private async Task Drop(string status) { var row = Rows.Find(r => r.Id == _dragged); if (row != null) { row.Status = status; await OnChange(); } _dragged = null; }
+    private RenderFragment StatusControl(TaskRow row) => @<select class="status-select" aria-label="@($"Status of {row.Title}")" @bind="row.Status" @bind:after="OnChange">@foreach (var status in PageValidation.Statuses) { <option>@status</option> }</select>;
+}

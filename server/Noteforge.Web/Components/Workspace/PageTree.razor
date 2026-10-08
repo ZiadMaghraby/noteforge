@@ -1,0 +1,25 @@
+@foreach (var page in Pages.Where(p => p.ParentId == ParentId))
+{
+    <div class="tree-row @(page.Id == Selected ? "selected" : "")" style="padding-left: @(12 + Depth * 14)px" @key="page.Id">
+        @if (Pages.Any(p => p.ParentId == page.Id))
+        {
+            <button class="tree-toggle" aria-label="@($"{(Collapsed.Contains(page.Id) ? "Expand" : "Collapse")} {page.Title}")" @onclick="() => Toggle(page.Id)">@(Collapsed.Contains(page.Id) ? "›" : "⌄")</button>
+        }
+        <button class="tree-link" @onclick="() => OnSelect.InvokeAsync(page.Id)"><span>@(page.Icon)</span><span>@(page.Title)</span></button>
+        <button class="tree-add icon-button" aria-label="@($"Add page inside {page.Title}")" @onclick="() => OnAdd.InvokeAsync(page.Id)">+</button>
+    </div>
+    @if (Depth < 50 && !Collapsed.Contains(page.Id))
+    {
+        <PageTree Pages="Pages" ParentId="@(page.Id)" Selected="@Selected" Depth="@(Depth + 1)" OnSelect="OnSelect" OnAdd="OnAdd" />
+    }
+}
+@code {
+    [Parameter] public List<PageDocument> Pages { get; set; } = [];
+    [Parameter] public string? ParentId { get; set; }
+    [Parameter] public string? Selected { get; set; }
+    [Parameter] public int Depth { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+    [Parameter] public EventCallback<string> OnAdd { get; set; }
+    private HashSet<string> Collapsed { get; } = [];
+    private void Toggle(string id) { if (!Collapsed.Add(id)) Collapsed.Remove(id); }
+}
