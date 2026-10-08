@@ -1,0 +1,11 @@
+packages:
+  - .
+storeDir: .sites-runtime/pnpm-store
+cacheDir: .sites-runtime/pnpm-cache
+overrides:
+  miniflare>sharp: 0.35.4
+
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+  workerd: true
