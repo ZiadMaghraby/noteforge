@@ -1,0 +1,25 @@
+@page "/signin"
+@page "/register"
+@inject NavigationManager Navigation
+<PageTitle>@(Registering ? "Create account" : "Sign in") — Noteforge</PageTitle>
+<main class="auth-screen">
+    <section class="auth-card">
+        <div class="brand-mark">N</div>
+        <h1>@(Registering ? "Make room for your ideas." : "Welcome back.")</h1>
+        <p>@(Registering ? "Create your private Noteforge workspace." : "Sign in to your Noteforge workspace.")</p>
+        @if (!string.IsNullOrEmpty(Error)) { <p class="auth-error" role="alert">@Error</p> }
+        <form method="post" action="@(Registering ? "/auth/register" : "/auth/login")" data-enhance="false">
+            <AntiforgeryToken />
+            @if (Registering) { <label>Your name<input name="name" autocomplete="name" required maxlength="100" /></label> }
+            <label>Email<input name="email" type="email" autocomplete="username" required maxlength="254" /></label>
+            <label>Password<input name="password" type="password" autocomplete="@(Registering ? "new-password" : "current-password")" required minlength="10" maxlength="256" /></label>
+            @if (Registering) { <small>At least 10 characters, including uppercase, lowercase, and a number.</small> }
+            <button class="primary-button" type="submit">@(Registering ? "Create account" : "Sign in")</button>
+        </form>
+        <a href="@(Registering ? "/signin" : "/register")" data-enhance-nav="false">@(Registering ? "Already have an account? Sign in" : "New here? Create an account")</a>
+    </section>
+</main>
+@code {
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    private bool Registering => new Uri(Navigation.Uri).AbsolutePath == "/register";
+}

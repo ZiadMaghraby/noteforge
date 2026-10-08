@@ -1,0 +1,297 @@
+[
+  {
+    "id": "seed:home",
+    "parentId": null,
+    "title": "Welcome to Noteforge",
+    "icon": "✳️",
+    "kind": "document",
+    "cover": "blue",
+    "favorite": true,
+    "archived": false,
+    "blocks": [
+      {
+        "id": "h-intro",
+        "type": "callout",
+        "text": "A little space for your biggest ideas. Everything here is editable — make yourself at home."
+      },
+      {
+        "id": "h-1",
+        "type": "heading2",
+        "text": "Your work, connected"
+      },
+      {
+        "id": "h-2",
+        "type": "text",
+        "text": "Bring your notes, plans, and projects together. Start with a page, write a thought, and let it grow."
+      },
+      {
+        "id": "h-3",
+        "type": "heading2",
+        "text": "Try a few things"
+      },
+      {
+        "id": "h-4",
+        "type": "todo",
+        "text": "Write your first note",
+        "checked": false
+      },
+      {
+        "id": "h-5",
+        "type": "todo",
+        "text": "Create a page inside another page",
+        "checked": false
+      },
+      {
+        "id": "h-6",
+        "type": "todo",
+        "text": "Switch the Project tracker from table to board",
+        "checked": false
+      },
+      {
+        "id": "h-7",
+        "type": "divider",
+        "text": ""
+      },
+      {
+        "id": "h-8",
+        "type": "heading2",
+        "text": "A blank page is a good beginning"
+      },
+      {
+        "id": "h-9",
+        "type": "text",
+        "text": "Click any line to edit. Press Enter for a new block, or type / to choose a heading, checklist, quote, and more."
+      },
+      {
+        "id": "h-10",
+        "type": "quote",
+        "text": "Great things are done by a series of small things brought together."
+      }
+    ],
+    "rows": [],
+    "version": 1,
+    "createdAt": "2026-10-08T20:31:30.884Z",
+    "updatedAt": "2026-10-08T20:31:30.884Z"
+  },
+  {
+    "id": "seed:notes",
+    "parentId": null,
+    "title": "Quick notes",
+    "icon": "📝",
+    "kind": "document",
+    "cover": "none",
+    "favorite": true,
+    "archived": false,
+    "blocks": [
+      {
+        "id": "n1",
+        "type": "heading2",
+        "text": "On my mind"
+      },
+      {
+        "id": "n2",
+        "type": "text",
+        "text": "A place to capture ideas before they disappear."
+      },
+      {
+        "id": "n3",
+        "type": "bullet",
+        "text": "What should we explore next?"
+      },
+      {
+        "id": "n4",
+        "type": "text",
+        "text": ""
+      }
+    ],
+    "rows": [],
+    "version": 1,
+    "createdAt": "2026-10-08T20:31:30.884Z",
+    "updatedAt": "2026-10-08T20:31:30.884Z"
+  },
+  {
+    "id": "seed:projects",
+    "parentId": null,
+    "title": "Projects",
+    "icon": "📂",
+    "kind": "document",
+    "cover": "none",
+    "favorite": false,
+    "archived": false,
+    "blocks": [
+      {
+        "id": "p1",
+        "type": "heading2",
+        "text": "Make room for good work"
+      },
+      {
+        "id": "p2",
+        "type": "text",
+        "text": "Keep a page for each project. Add context, collect decisions, and break work into small steps."
+      }
+    ],
+    "rows": [],
+    "version": 1,
+    "createdAt": "2026-10-08T20:31:30.884Z",
+    "updatedAt": "2026-10-08T20:31:30.884Z"
+  },
+  {
+    "id": "seed:tracker",
+    "parentId": "seed:projects",
+    "title": "Project tracker",
+    "icon": "📋",
+    "kind": "database",
+    "cover": "none",
+    "favorite": true,
+    "archived": false,
+    "blocks": [],
+    "rows": [
+      {
+        "id": "r1",
+        "title": "Define the product vision",
+        "status": "Done",
+        "priority": "High",
+        "assignee": "Me",
+        "due": "",
+        "notes": ""
+      },
+      {
+        "id": "r2",
+        "title": "Build the first workspace",
+        "status": "In progress",
+        "priority": "High",
+        "assignee": "Me",
+        "due": "",
+        "notes": ""
+      },
+      {
+        "id": "r3",
+        "title": "Gather feedback on the editor",
+        "status": "Not started",
+        "priority": "Medium",
+        "assignee": "",
+        "due": "",
+        "notes": ""
+      },
+      {
+        "id": "r4",
+        "title": "Design database templates",
+        "status": "Not started",
+        "priority": "Medium",
+        "assignee": "",
+        "due": "",
+        "notes": ""
+      },
+      {
+        "id": "r5",
+        "title": "Write a getting-started guide",
+        "status": "In progress",
+        "priority": "Low",
+        "assignee": "Me",
+        "due": "",
+        "notes": ""
+      }
+    ],
+    "version": 1,
+    "createdAt": "2026-10-08T20:31:30.884Z",
+    "updatedAt": "2026-10-08T20:31:30.884Z"
+  },
+  {
+    "id": "seed:brief",
+    "parentId": "seed:projects",
+    "title": "Product brief",
+    "icon": "📐",
+    "kind": "document",
+    "cover": "none",
+    "favorite": false,
+    "archived": false,
+    "blocks": [
+      {
+        "id": "b1",
+        "type": "heading2",
+        "text": "The idea"
+      },
+      {
+        "id": "b2",
+        "type": "text",
+        "text": "A calm, connected workspace for thinking and doing."
+      },
+      {
+        "id": "b3",
+        "type": "heading2",
+        "text": "What matters"
+      },
+      {
+        "id": "b4",
+        "type": "bullet",
+        "text": "Writing should feel effortless."
+      },
+      {
+        "id": "b5",
+        "type": "bullet",
+        "text": "Pages and projects should stay connected."
+      },
+      {
+        "id": "b6",
+        "type": "bullet",
+        "text": "Your work should always be yours to export."
+      }
+    ],
+    "rows": [],
+    "version": 1,
+    "createdAt": "2026-10-08T20:31:30.884Z",
+    "updatedAt": "2026-10-08T20:31:30.884Z"
+  },
+  {
+    "id": "seed:meeting",
+    "parentId": null,
+    "title": "Meeting notes",
+    "icon": "💬",
+    "kind": "document",
+    "cover": "none",
+    "favorite": false,
+    "archived": false,
+    "blocks": [
+      {
+        "id": "m1",
+        "type": "heading2",
+        "text": "Agenda"
+      },
+      {
+        "id": "m2",
+        "type": "bullet",
+        "text": "What did we learn?"
+      },
+      {
+        "id": "m3",
+        "type": "bullet",
+        "text": "What is the next small step?"
+      },
+      {
+        "id": "m4",
+        "type": "heading2",
+        "text": "Decisions"
+      },
+      {
+        "id": "m5",
+        "type": "text",
+        "text": ""
+      },
+      {
+        "id": "m6",
+        "type": "heading2",
+        "text": "Action items"
+      },
+      {
+        "id": "m7",
+        "type": "todo",
+        "text": "Add a follow-up",
+        "checked": false
+      }
+    ],
+    "rows": [],
+    "version": 1,
+    "createdAt": "2026-10-08T20:31:30.884Z",
+    "updatedAt": "2026-10-08T20:31:30.884Z"
+  }
+]

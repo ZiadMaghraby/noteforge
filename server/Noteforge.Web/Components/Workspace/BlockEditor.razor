@@ -1,0 +1,79 @@
+@implements IAsyncDisposable
+<div class="editor" aria-label="Page blocks">
+    @for (var i = 0; i < Blocks.Count; i++)
+    {
+        var index = i;
+        var block = Blocks[i];
+        <div class="block-row block-@block.Type" @key="block.Id">
+            <div class="block-tools">
+                <button aria-label="@($"Add block before block {i + 1}")" @onclick="() => Add(index)">+</button>
+                <button aria-label="@($"Options for block {i + 1}")" aria-expanded="@(_menu == block.Id)" @onclick="() => _menu = _menu == block.Id ? null : block.Id">⋮</button>
+            </div>
+            @if (block.Type == "divider") { <hr /> }
+            else
+            {
+                @if (block.Type == "todo") { <input type="checkbox" aria-label="@($"Complete {block.Text}")" checked="@block.Checked" @onchange="e => Check(block, e)" /> }
+                @if (block.Type is "bullet" or "numbered") { <span class="block-marker">@(block.Type == "bullet" ? "•" : $"{index + 1}.")</span> }
+                @if (block.Type == "callout") { <span class="block-marker">💡</span> }
+                <textarea id="block-@block.Id" class="block-text" rows="1" aria-label="@($"{Label(block.Type)} block {i + 1}")" placeholder="@(block.Type == "text" ? "Write something, or type / for commands" : Label(block.Type))" value="@block.Text" @oninput="e => Input(block, e)" @onkeydown="e => Keyboard(block, index, e)"></textarea>
+            }
+            @if (_menu == block.Id || block.Text.StartsWith('/'))
+            {
+                <div class="block-menu" role="group" aria-label="Block type">
+                    @foreach (var type in PageValidation.BlockTypes.Where(t => !block.Text.StartsWith('/') || Label(t).Contains(block.Text[1..], StringComparison.OrdinalIgnoreCase)))
+                    {
+                        <button @onclick="() => Convert(block, type)">@Label(type)</button>
+                    }
+                    @if (_menu == block.Id)
+                    {
+                        <button disabled="@(index == 0)" @onclick="() => Move(index, -1)">Move up</button>
+                        <button disabled="@(index == Blocks.Count - 1)" @onclick="() => Move(index, 1)">Move down</button>
+                        <button @onclick="() => Duplicate(index)">Duplicate block</button>
+                        <button @onclick="() => Remove(block)">Delete block</button>
+                    }
+                </div>
+            }
+        </div>
+    }
+    <button class="append-block" @onclick="() => Add(Blocks.Count)">+ Click to keep writing</button>
+</div>
+@code {
+    [Parameter] public List<Block> Blocks { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+    [Inject] public IJSRuntime JS { get; set; } = default!;
+    private string? _menu;
+    private DotNetObjectReference<BlockEditor>? _reference;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { _reference = DotNetObjectReference.Create(this); await JS.InvokeVoidAsync("noteforge.registerEditor", _reference); }
+    }
+    [JSInvokable] public async Task SplitBlock(string id, string text, int start, int end)
+    {
+        var index = Blocks.FindIndex(b => b.Id == id); if (index < 0 || start < 0 || end < start || end > text.Length) return;
+        var previous = Blocks[index]; previous.Text = text[..start];
+        var block = new Block { Type = previous.Type.StartsWith("heading") ? "text" : previous.Type, Text = text[end..] };
+        Blocks.Insert(index + 1, block); await Changed.InvokeAsync(); await InvokeAsync(StateHasChanged);
+        await JS.InvokeVoidAsync("noteforge.focus", "block-" + block.Id);
+    }
+    public ValueTask DisposeAsync() { _reference?.Dispose(); return ValueTask.CompletedTask; }
+    public static string Label(string type) => type switch { "heading1" => "Heading 1", "heading2" => "Heading 2", "heading3" => "Heading 3", "todo" => "To-do list", "bullet" => "Bullet list", "numbered" => "Numbered list", _ => char.ToUpperInvariant(type[0]) + type[1..] };
+    private async Task Input(Block block, ChangeEventArgs e) { block.Text = e.Value?.ToString() ?? ""; await Changed.InvokeAsync(); }
+    private async Task Check(Block block, ChangeEventArgs e) { block.Checked = e.Value is true; await Changed.InvokeAsync(); }
+    private async Task Add(int index) { var block = new Block(); Blocks.Insert(index, block); await Changed.InvokeAsync(); await InvokeAsync(StateHasChanged); await JS.InvokeVoidAsync("noteforge.focus", "block-" + block.Id); }
+    private async Task Convert(Block block, string type) { block.Type = type; if (block.Text.StartsWith('/')) block.Text = ""; _menu = null; await Changed.InvokeAsync(); }
+    private async Task Move(int index, int direction) { var block = Blocks[index]; Blocks.RemoveAt(index); Blocks.Insert(index + direction, block); _menu = null; await Changed.InvokeAsync(); }
+    private async Task Duplicate(int index) { var b = Blocks[index]; Blocks.Insert(index + 1, new() { Type = b.Type, Text = b.Text, Checked = b.Checked }); _menu = null; await Changed.InvokeAsync(); }
+    private async Task Remove(Block block) { Blocks.Remove(block); _menu = null; await Changed.InvokeAsync(); }
+    private async Task Keyboard(Block block, int index, KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") { _menu = null; return; }
+        if (e.AltKey && e.Key == "ArrowUp" && index > 0) await Move(index, -1);
+        else if (e.AltKey && e.Key == "ArrowDown" && index < Blocks.Count - 1) await Move(index, 1);
+        else if (e.Key == "Enter" && e.CtrlKey) { if (block.Type == "todo") { block.Checked = !block.Checked; await Changed.InvokeAsync(); } else await Add(index + 1); }
+        else if (e.Key == "Enter" && block.Text.StartsWith('/'))
+        {
+            var type = PageValidation.BlockTypes.FirstOrDefault(t => Label(t).Contains(block.Text.Trim()[1..], StringComparison.OrdinalIgnoreCase));
+            if (type != null) await Convert(block, type);
+        }
+    }
+}

@@ -1,0 +1,88 @@
+@page "/"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+<PageTitle>@(_active?.Title ?? "Your workspace") — Noteforge</PageTitle>
+<NavigationLock ConfirmExternalNavigation="_dirty" OnBeforeInternalNavigation="GuardNavigation" />
+@if (_workspace == null)
+{
+    <main class="loading-screen"><div class="brand-mark">N</div><h1>Noteforge</h1><p>@(_error ?? "Opening your workspace…")</p></main>
+}
+else
+{
+<div class="workspace @(_sidebar ? "sidebar-open" : "")">
+    @if (_sidebar) { <button class="mobile-backdrop" aria-label="Close sidebar" @onclick="() => _sidebar = false"></button> }
+    <aside class="sidebar" aria-label="Workspace navigation" inert="@(!_sidebar)">
+        <div class="workspace-header"><span class="brand-mark">N</span>Noteforge<button class="collapse icon-button" aria-label="Close sidebar" @onclick="() => _sidebar = false">‹</button></div>
+        <div class="workspace-name"><span class="avatar">@Initial</span>@_workspace.Name</div>
+        <nav class="primary-nav"><button @onclick='() => OpenModal("search")'>⌕ Search <span class="shortcut">Ctrl K</span></button><button @onclick="GoHome">⌂ Home</button></nav>
+        <div class="sidebar-section">Favorites</div>
+        <div class="favorites">@foreach (var page in Visible.Where(p => p.Favorite)) { <button class="@(page.Id == _active?.Id ? "selected" : "")" @onclick="() => Select(page.Id)"><span>@(page.Icon)</span><span>@(page.Title)</span></button> }</div>
+        <div class="sidebar-section">Private pages<button aria-label="Add page" @onclick="() => Create()">+</button></div>
+        <div class="page-tree"><PageTree Pages="Visible" Selected="@(_active?.Id)" OnSelect="Select" OnAdd="AddChild" /><button class="add-page" @onclick="() => Create()">+ Add a page</button></div>
+        <div class="sidebar-bottom"><button @onclick='() => OpenModal("templates")'>▦ Templates</button><button @onclick='() => OpenModal("trash")'>♧ Trash</button><button @onclick='() => OpenModal("settings")'>⚙ Settings</button></div>
+        <div class="sidebar-footer">Made for your next idea.</div>
+    </aside>
+    <main class="main-panel">
+        <header class="topbar"><button class="icon-button" aria-label="Open sidebar" @onclick="() => _sidebar = !_sidebar">☰</button>
+            <div class="breadcrumbs">@foreach (var parent in Ancestors()) { <button @onclick="() => Select(parent.Id)">@parent.Icon @parent.Title</button><span>/</span> }<span class="current-crumb">@_active?.Icon @_active?.Title</span></div>
+            <div class="topbar-actions"><span class="save-status" role="status">@_saveStatus</span>
+            @if (_active != null) { <button class="icon-button" aria-label="@(_active.Favorite ? "Remove from favorites" : "Add to favorites")" @onclick="ToggleFavorite">@(_active.Favorite ? "★" : "☆")</button><button class="icon-button" aria-label="Page actions" aria-expanded="@_pageMenu" @onclick="() => _pageMenu = !_pageMenu">•••</button> }
+            </div>
+            @if (_pageMenu && _active != null) { <div class="page-menu"><button @onclick="ExportMarkdown">Export as Markdown</button><button @onclick="Duplicate">Duplicate page</button><button @onclick='() => OpenModal("move")'>Move to…</button><button @onclick="() => AddChild(_active.Id)">Add a nested page</button><button @onclick="Archive">Move to trash</button></div> }
+        </header>
+        @if (_error != null) { <div class="error-banner" role="alert"><span>@_error</span><button @onclick="RetrySave">Retry save</button><button @onclick="ExportDraft">Export draft</button></div> }
+        <div class="document-scroll">
+        @if (_active is { } active)
+        {
+            @if (active.Cover != "none") { <div class="page-cover cover-@active.Cover"><span class="cover-label">A SPACE TO THINK. A PLACE TO BUILD.</span><div class="cover-actions"><button @onclick="ChangeCover">Change cover</button><button @onclick="RemoveCover">Remove</button></div></div> }
+            <article class="document @(active.Kind == "database" ? "wide" : "") @(active.Cover != "none" ? "with-cover" : "")">
+                <div class="page-heading"><button class="page-icon" aria-label="Change page icon" @onclick='() => OpenModal("icon")'>@active.Icon</button>@if (active.Cover == "none") { <button class="add-cover" @onclick="ChangeCover">Add cover</button> }</div>
+                <div class="page-eyebrow">@(active.Kind == "database" ? "DATABASE" : "PAGE")</div>
+                <textarea class="page-title" rows="1" maxlength="500" aria-label="Page title" @bind="active.Title" @bind:event="oninput" @bind:after="Changed"></textarea>
+                <div class="page-meta"><span class="avatar small">@Initial</span>@_workspace.User.Name · Private workspace</div>
+                @if (active.Kind == "database") { <DatabaseView Rows="active.Rows" Changed="Changed" @key="active.Id" /> }
+                else { <BlockEditor Blocks="active.Blocks" Changed="Changed" @key="active.Id" /> }
+                <footer class="page-footer">@(active.Kind == "database" ? $"{active.Rows.Count} items" : $"{active.Blocks.Sum(b => b.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length)} words") · @active.Blocks.Count blocks</footer>
+            </article>
+        }
+        else { <div class="empty-workspace"><h1>A fresh start.</h1><p>Add a page to begin.</p><button class="primary-button" @onclick="() => Create()">Create a page</button></div> }
+        </div>
+    </main>
+</div>
+@if (_modal != null)
+{
+    <div class="modal-backdrop"><section class="nf-dialog" role="dialog" aria-modal="true" aria-label="@ModalTitle" @onkeydown='e => { if (e.Key == "Escape") _modal = null; }'>
+        <button class="dialog-close" aria-label="Close dialog" @onclick="() => _modal = null">×</button><h2>@ModalTitle</h2>
+        @if (_modal == "search")
+        {
+            <input class="search-input" aria-label="Search pages" placeholder="Search your pages…" @bind="_query" @bind:event="oninput" />
+            <div class="search-results">@foreach (var page in Visible.Where(p => p.Title.Contains(_query, StringComparison.OrdinalIgnoreCase) || p.Blocks.Any(b => b.Text.Contains(_query, StringComparison.OrdinalIgnoreCase)))) { <button @onclick="() => Select(page.Id)"><span>@(page.Icon)</span><strong>@(page.Title)</strong></button> }</div>
+        }
+        else if (_modal == "templates")
+        {
+            <p>Start with a little structure.</p><div class="template-grid">@foreach (var template in new[] { "Blank page", "Meeting notes", "Daily journal", "Project tracker" }) { <button @onclick="() => CreateTemplate(template)"><span>@(template == "Project tracker" ? "📋" : "📄")</span><strong>@template</strong></button> }</div>
+        }
+        else if (_modal == "trash")
+        {
+            <p>Restore a page whenever you need it.</p><div class="trash-list">@foreach (var page in _workspace.Pages.Where(p => p.Archived)) { <div><span>@(page.Icon) @(page.Title)</span><button aria-label="@($"Restore {page.Title}")" @onclick="() => Restore(page)">Restore</button></div> }</div>
+        }
+        else if (_modal == "settings")
+        {
+            <div class="settings-panel"><div><span>Appearance</span><button @onclick="ToggleTheme">Switch to @(_dark ? "light" : "dark")</button></div><div><span>Your account</span><span>@_workspace.User.Email</span></div><div><span>Workspace backup</span><button @onclick="ExportWorkspace">Export all pages</button></div></div>
+            <p class="settings-note">Noteforge · Your pages are saved in workspace storage.</p>
+            <label class="notes-label">Import a JSON backup<InputFile OnChange="ImportBackup" accept=".json,application/json" /></label>
+            <p>Imported pages are added to this account. Existing pages are kept.</p>
+            <form action="/auth/logout" method="post" data-enhance="false"><AntiforgeryToken /><button type="submit">Sign out</button></form>
+        }
+        else if (_modal == "move")
+        {
+            <div class="move-list"><button @onclick="() => Move(null)">Workspace root</button>@foreach (var page in Visible.Where(p => !Descendants(_active!.Id).Contains(p.Id))) { <button @onclick="() => Move(page.Id)">@(page.Icon) @(page.Title)</button> }</div>
+        }
+        else if (_modal == "icon")
+        {
+            <div class="icon-picker">@foreach (var icon in new[] { "📄", "🏠", "📝", "📂", "📋", "📐", "💬", "📓", "💡", "🚀", "🎯", "📚", "🌿", "⭐", "🎨", "🧩" }) { <button aria-label="@($"Use {icon}")" @onclick="() => ChangeIcon(icon)">@icon</button> }</div>
+        }
+    </section></div>
+}
+}
