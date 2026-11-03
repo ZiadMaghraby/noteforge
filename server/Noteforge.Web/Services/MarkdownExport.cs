@@ -12,11 +12,24 @@ public static class MarkdownExport
             "bullet" => "- " + b.Text, "numbered" => "1. " + b.Text,
             "todo" => $"- [{(b.Checked ? "x" : " ")}] {b.Text}",
             "quote" or "callout" => string.Join('\n', b.Text.Split('\n').Select(line => "> " + line)),
-            "code" => "```\n" + b.Text + "\n```", "divider" => "---", _ => b.Text
+            "code" => CodeBlock(b.Text), "divider" => "---", _ => b.Text
         });
         var text = "# " + page.Title + "\n\n" + string.Join("\n\n", blocks);
         if (page.Kind == "database") text += "\n\n| Name | Status | Priority | Assignee | Due date |\n| --- | --- | --- | --- | --- |\n" + string.Join('\n', page.Rows.Select(r => "| " + string.Join(" | ", new[] { r.Title, r.Status, r.Priority, r.Assignee, r.Due }.Select(Cell)) + " |"));
         return text + "\n";
     }
+    private static string CodeBlock(string content)
+    {
+        var longest = 0;
+        var run = 0;
+        foreach (var character in content)
+        {
+            run = character == '`' ? run + 1 : 0;
+            longest = Math.Max(longest, run);
+        }
+        var fence = new string('`', Math.Max(3, longest + 1));
+        return fence + "\n" + content + "\n" + fence;
+    }
+
     private static string Cell(string value) => value.Replace("|", "\\|").Replace("\n", " ");
 }
